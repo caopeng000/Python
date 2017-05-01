@@ -1,0 +1,139 @@
+jupyter notebook
+
+import requests
+res=requests.get('http://news.sina.com.cn/china/')
+res.encoding='utf-8'
+print(type(res))
+#print (res.text)
+--------------------------------------------------------
+from bs4 import BeautifulSoup
+html_sample=' \
+<html> \
+<body> \
+<h1 id="title">Hello World</h1> \
+<a href="#" class="link">This is link1</a> \
+<a href="# link2" class="link">This is link2</a> \
+</body> \
+</html>'
+soup=BeautifulSoup(html_sample,'html.parser')
+print(type(soup))
+print(soup.text)
+--------------------------------------------------------
+soup=BeautifulSoup(html_sample,'html.parser')
+header=soup.select('h1')
+print(header[0].text)
+--------------------------------------------------------
+soup=BeautifulSoup(html_sample,'html.parser')
+alink=soup.select('a')
+print(alink)
+for link in alink:
+    print(link.text)
+--------------------------------------------------------	
+alink=soup.select('#title')
+print(alink)
+--------------------------------------------------------
+for link in soup.select('.link'):
+  print(link)
+--------------------------------------------------------  
+alinks=soup.select('a')
+for link in alinks:
+    #print(link)
+    print(link['href'])
+--------------------------------------------------------	
+a='<a href="#" qoo=123 abc=456></a>'
+soup2=BeautifulSoup(a,'html.parser')
+print (soup2.select('a')[0]['href'])
+--------------------------------------------------------
+import requests
+from bs4 import BeautifulSoup
+res=requests.get('http://news.sina.com.cn/china/')
+res.encoding='utf-8'
+soup=BeautifulSoup(res.text,'html.parser')
+
+for news in soup.select('.news-item'):
+    if len(news.select('h2')) > 0:
+        h2=news.select('h2')[0].text
+        time=news.select('.time')[0].text
+        a=news.select('a')[0]['href']
+        print(time,h2,a)
+--------------------------------------------------------		
+import requests
+from bs4 import BeautifulSoup
+res=requests.get('http://news.sina.com.cn/c/nd/2017-05-01/doc-ifyetwtf9300929.shtml')
+res.encoding= 'utf-8'
+print(res.text)
+soup=BeautifulSoup(res.text,'html.parser')
+soup.select('#artibodyTitle')[0].text
+--------------------------------------------------------
+timesource=soup.select('.time-source')[0].contents[0].strip()
+type(timesource)
+timesource
+from datetime import datetime
+dt= datetime.strptime(timesource, '%Y年%m月%d日%H:%M')
+dt.strftime('%Y-%m-%d')
+soup.select('.time-source span a')[0].text
+--------------------------------------------------------
+article =[]
+for p in soup.select('#artibody p')[:-1]:
+    article.append(p.text.strip())
+print(article)
+
+' '.join(article)
+--------------------------------------------------------
+' '.join([p.text.strip() for p in soup.select('#artibody p')[:-1]])
+--------------------------------------------------------
+soup.select('.article-editor')[0].text.lstrip('责任编辑：')
+--------------------------------------------------------
+soup.select('#commentCount1')
+--------------------------------------------------------
+import requests
+comments=requests.get('http://comment5.news.sina.com.cn/page/info?version=1&format=js&channel=gn&newsid=comos-fyetwtf9278290&group=&compress=0&ie=utf-8&oe=utf-8&page=1&page_size=20')
+
+import json
+jd=json.loads(comments.text.strip('var data='))
+jd['result']['count']['total']
+--------------------------------------------------------
+newsurl = 'http://news.sina.com.cn/c/nd/2017-05-01/doc-ifyetwtf9278290.shtml'
+newsid=newsurl.split('/')[-1].rstrip('.shtml').lstrip('doc-i')
+newsid
+--------------------------------------------------------
+import re
+m=re.search('doc-i(.+).shtml',newsurl)
+newsid=m.group(1)
+newsid
+--------------------------------------------------------
+commentURL='http://comment5.news.sina.com.cn/page/info?version=1&format=js&channel=gn&newsid=comos-{}&group=&compress=0&ie=utf-8&oe=utf-8&page=1&page_size=20'
+commentURL.format(newsid)
+--------------------------------------------------------
+import re
+import json
+
+def getCommentCounts(newsurl):
+    m=re.search('doc-i(.+).shtml',newsurl)
+    newsid=m.group(1)
+    comments=requests.get(commentURL.format(newsid))
+    jd=json.loads(comments.text.strip('var data='))
+    return jd['result']['count']['total']
+--------------------------------------------------------
+news = 'http://news.sina.com.cn/c/nd/2017-05-01/doc-ifyetwtf9278290.shtml'
+
+getCommentCounts(news)
+--------------------------------------------------------
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+
+def getNewsDetail(newsurl):
+    result={}
+    res=requests.get(newsurl)
+    res.encoding='utf-8'
+    soup =BeautifulSoup(res.text,'html.parser')
+    result['title']=soup.select('#artibodyTitle')[0].text
+    result['newssource']=soup.select('.time-source span a')[0].text
+    timesource=soup.select('.time-source')[0].contents[0].strip()
+    result['dt']=datetime.strptime(timesource, '%Y年%m月%d日%H:%M')
+    result['article']=' '.join([p.text.strip() for p in soup.select('#artibody p')[:-1]])
+    result['editor']=soup.select('.article-editor')[0].text.strip('责任编辑：')
+    result['comments']=getCommentCounts(newsurl)
+    return result
+--------------------------------------------------------
